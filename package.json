@@ -12,9 +12,11 @@
     "@walletconnect/web3-provider": "^1.7.8",
     "core-js": "^3.6.5",
     "crypto-js": "^4.1.1",
+    "fortmatic": "^2.2.1",
     "vue": "^3.0.0",
     "vue-skeletor": "^1.0.6",
-    "web3": "^1.7.3"
+    "web3": "^1.7.3",
+    "web3modal": "^1.9.7"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.13",
