@@ -82,6 +82,7 @@ export default {
     connectWallet: async function () {
       provider = await web3Modal.connect();
       web3 = new Web3(provider);
+      await this.switchChain();
       await web3.eth.getAccounts().then((r) => {
         this.currAddr = r[0];
       });
@@ -147,6 +148,7 @@ export default {
                   nativeCurrency: {
                     name: "BNB",
                     symbol: "BNB",
+                    decimals: 18
                   },
                 },
               ],
