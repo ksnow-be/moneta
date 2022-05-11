@@ -4,13 +4,13 @@
     <div>
       <h3>{{ introMess }}</h3>
       <div v-if="currAddr">
-        <h3>{{ currAddr }}</h3>
+        <h3>{{ currAddrMini }}</h3>
         <h3>chain: {{ chainId }}</h3>
         <h3>balance: {{ balance }}</h3>
 
-        <input type="text" placeholder="from" v-model="transaction.from" />
+        <!-- <input type="text" placeholder="from" v-model="transaction.from" /> -->
         <input type="text" placeholder="to" v-model="transaction.to" />
-        <input type="text" placeholder="val" v-model="transaction.val" />
+        <!-- <input type="text" placeholder="val" v-model="transaction.val" /> -->
         <br />
         <button @click="sendTransaction">send transatcion</button>
         <br />
@@ -72,6 +72,7 @@ export default {
   data() {
     return {
       currAddr: null,
+      currAddrMini: null,
       chainId: null,
       balance: null,
       transaction: {
@@ -97,6 +98,7 @@ export default {
 
       await this.switchChain();
       this.currAddr = await service.getAccounts(web3);
+      this.currAddrMini = this.currAddr.slice(0,4) + '...' + this.currAddr.slice(this.currAddr.length - 5, this.currAddr.length) 
       this.chainId = await service.getChainId(web3);
       this.balance = await service.getBalance(web3, this.currAddr);
 
