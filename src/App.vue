@@ -1,5 +1,5 @@
 <template>
-  <img alt="Vue logo" src="https://static.vecteezy.com/system/resources/previews/000/548/225/original/cryptocurrency-and-blockchain-icons-or-logo-vector.jpg" height="250"/>
+  <!-- <img alt="Vue logo" src="https://static.vecteezy.com/system/resources/previews/000/548/225/original/cryptocurrency-and-blockchain-icons-or-logo-vector.jpg" height="250"/> -->
   <HelloWorld v-if="1==2" msg="Demo"/>
   <Web3Modal v-else />
 </template>

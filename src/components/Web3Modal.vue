@@ -1,136 +1,138 @@
 <template>
-  <div>
-    <h1>MODAL</h1>
-    <div v-if="currAddr">
+  <div class="mainDiv">
+    <img alt="Vue logo" src="@/assets/binance-coin-bnb.png" height="150" />
+    <div>
+      <h3>{{ introMess }}</h3>
+      <div v-if="currAddr">
         <h3>{{ currAddr }}</h3>
         <h3>chain: {{ chainId }}</h3>
         <h3>balance: {{ balance }}</h3>
 
-        <input type="text" placeholder="from" v-model="transaction.from">
-        <input type="text" placeholder="to" v-model="transaction.to">
-        <input type="text" placeholder="val" v-model="transaction.val">
-        <br>
+        <input type="text" placeholder="from" v-model="transaction.from" />
+        <input type="text" placeholder="to" v-model="transaction.to" />
+        <input type="text" placeholder="val" v-model="transaction.val" />
+        <br />
         <button @click="sendTransaction">send transatcion</button>
-        <br>
+        <br />
+      </div>
+
+      <loading
+        :active="isLoading"
+        :can-cancel="true"
+        :on-cancel="onCancel"
+        :is-full-page="fullPage"
+        loader="spinner"
+        blur="4px"
+        :height="100"
+        :width="100"
+        color="#EC760E"
+        background-color="#3E3E3E"
+      />
+      <button @click="isLoading = true">modal demo</button>
+
+      <button @click="connectWallet">connect wallet via modal</button>
+      <button @click="logChainId">log chainId</button>
+      <button @click="logAccounts">accs</button>
+      <br />
+      <button @click="switchChain">switchChain</button>
     </div>
-    
-    <button @click="connectWallet">connect wallet via modal</button>
-    <button @click="getChainId">log chainId</button>
-    <button @click="getAccounts">accs</button>
-    <br>
-    <button @click="switchChain">switchChain</button>
   </div>
 </template>
 
 <script>
 import Web3 from "web3";
 import Web3Modal from "web3modal";
-import WalletConnectProvider from "@walletconnect/web3-provider";
-// import Fortmatic from 'fortmatic';
-
-const providerOptions = {
-  injected: {
-    display: {
-      name: "Маска",
-      description: "Дай мне все бабло со свеой метамаски ",
-    },
-    package: null,
-  },
-  walletconnect: {
-    display: {
-      name: "TrustWallet",
-      description: "Хуй знает как но дай бабки",
-    },
-    package: WalletConnectProvider,
-    options: {
-      rpc: {
-        56: "https://bsc-dataseed1.binance.org",
-      },
-      chainId: 56,
-      network: "binance",
-    },
-  },
-};
+import service from "@/web3service";
+import providerOptions from "@/providerOptions";
+import Loading from "vue-loading-overlay";
+import "vue-loading-overlay/dist/vue-loading.css";
 
 const web3Modal = new Web3Modal({
   cacheProvider: false,
   providerOptions,
   disableInjectedProvider: false,
+  theme: "dark"
 });
 
-// const provider =  web3Modal.connect();
-// const web3 = new Web3(provider);
 var provider = null;
 var web3 = null;
 
 export default {
   name: "Web3Modal",
-  created() {},
+  created() {
+    if (typeof window.ethereum !== "undefined") {
+      this.introMess = "Metamask установлен. Выбор из TrustWallet / Metamask.";
+    } else {
+      this.introMess = "Metamask не установлен. Только TrustWallet.";
+    }
+  },
+  components: {
+    Loading
+  },
   data() {
     return {
       currAddr: null,
       chainId: null,
       balance: null,
       transaction: {
-          from: "",
-          to: "",
-          val: ""
-      }
+        from: "",
+        to: "",
+        val: ""
+      },
+      // модальное окно
+      isLoading: false,
+      fullPage: true,
+      // вступительное сообщение
+      introMess: ""
     };
   },
   methods: {
-    connectWallet: async function () {
+    onCancel() {
+      console.log("cancel");
+      this.isLoading = !this.isLoading;
+    },
+    connectWallet: async function() {
       provider = await web3Modal.connect();
       web3 = new Web3(provider);
-      await this.switchChain();
-      await web3.eth.getAccounts().then((r) => {
-        this.currAddr = r[0];
-      });
-      await web3.eth.getChainId().then((r) => {
-        this.chainId = r;
-      });
-      await web3.eth.getBalance(this.currAddr).then((r) => {
-        this.balance = web3.utils.fromWei(r, "ether");
-      });
 
-      provider.on("chainChanged", (chainId) => {
+      await this.switchChain();
+      this.currAddr = await service.getAccounts(web3);
+      this.chainId = await service.getChainId(web3);
+      this.balance = await service.getBalance(web3, this.currAddr);
+
+      provider.on("chainChanged", chainId => {
         console.log("chain changed", chainId);
         this.chainId = chainId;
       });
-
-      provider.on("disconnect", (error) => {
+      provider.on("disconnect", error => {
         console.log(error);
       });
     },
-    getChainId: async function () {
-      await web3.eth.getChainId().then((r) => {
-        console.log(r);
-      });
+    logChainId: async function() {
+      console.log(await service.getChainId(web3));
     },
-    providerDisconnect: async function () {
+    logAccounts: async function() {
+      console.log(await service.getAccounts(web3));
+    },
+    providerDisconnect: async function() {
       await provider.disconnect();
     },
-    getAccounts: async function () {
-      await web3.eth.getAccounts().then((r) => {
-        console.log(r);
-      });
-    },
-    sendTransaction: async function () {
+    sendTransaction: async function() {
       await web3.eth
         .sendTransaction({
           from: this.transaction.from,
           to: this.transaction.to, //trust test eth
-          value: web3.utils.toWei(this.transaction.val, "ether"),
+          value: web3.utils.toWei(this.transaction.val, "ether")
         })
-        .then((hash) => {
+        .then(hash => {
           console.log(hash);
         });
     },
-    switchChain: async function () {
+    switchChain: async function() {
       try {
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x61" }],
+          params: [{ chainId: "0x61" }]
         });
       } catch (switchError) {
         // This error code indicates that the chain has not been added to MetaMask.
@@ -143,15 +145,15 @@ export default {
                   chainId: "0x61",
                   chainName: "Smart Chain - Testnet",
                   rpcUrls: [
-                    "https://data-seed-prebsc-1-s1.binance.org:8545/",
-                  ] /* ... */,
+                    "https://data-seed-prebsc-1-s1.binance.org:8545/"
+                  ] /* .›.. */,
                   nativeCurrency: {
                     name: "BNB",
                     symbol: "BNB",
                     decimals: 18
-                  },
-                },
-              ],
+                  }
+                }
+              ]
             });
           } catch (addError) {
             // handle "add" error
@@ -159,49 +161,21 @@ export default {
         }
         // handle other "switch" errors
       }
-    },
-  },
+    }
+  }
 };
-
-// const providerOptions = {
-//   injected: {
-//     display: {
-//       name: "Injected хуй",
-//       description: "Connect with the provider in your Browser хуй "
-//     },
-//     package: null
-//   },
-//   // Example with WalletConnect provider
-//   walletconnect: {
-//     display: {
-//       logo: "data:image/gif;base64,INSERT_BASE64_STRING",
-//       name: "Mobile",
-//       description: "Scan qrcode with your mobile wallet"
-//     },
-//     package: WalletConnectProvider,
-//     options: {
-//       infuraId: "INFURA_ID" // required
-//     }
-//   }
-// };
-
-//вот так рабоатет ебать
-// const provider = new WalletConnectProvider({
-//     rpc: {
-//         56: "https://bsc-dataseed1.binance.org",
-//     },
-//     chainId: 56,
-//     network: "binance",
-//     // qrcode: true,
-//     // qrcodeModalOptions: {
-//     //     mobileLinks: [
-//     //       "metamask",
-//     //       "trust",
-//     //     ]
-//     // }
-// });
 </script>
 
 <style>
+body {
+  background-image: url("https://24wallpapers.com/app-gateway/wallpaper-uploads/wallpapers/legacyUploads/wi5237cbe2eef-1ae3-40ee-9627-87a488a3643318.jpg");
+}
+.mainDiv {
+  margin-top: 10%;
+}
+
+h3 {
+  color: honeydew;
+}
 </style>
 
