@@ -1,6 +1,6 @@
 <template>
   <div class="mainDiv">
-    <img alt="Vue logo" src="@/assets/binance-coin-bnb.png" height="150" />
+        <img alt="BNB icon" :src=BNBlogo height="150" />
     <div>
       <h3>{{ introMess }}</h3>
       <div v-if="currAddr">
@@ -84,7 +84,9 @@ export default {
       isLoading: false,
       fullPage: true,
       // вступительное сообщение
-      introMess: ""
+      introMess: "",
+      // иконка
+      BNBlogo: require('@/assets/binance-coin-bnb.png')
     };
   },
   methods: {
