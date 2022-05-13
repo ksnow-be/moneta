@@ -1,19 +1,31 @@
 <template>
   <div class="mainDiv">
-        <img alt="BNB icon" :src=BNBlogo height="150" />
+    <img alt="BNB icon" :src="BNBlogo" height="150" />
     <div>
       <h3>{{ introMess }}</h3>
       <div v-if="currAddr">
-        <h3>{{ currAddrMini }}</h3>
-        <h3>chain: {{ chainId }}</h3>
-        <h3>balance: {{ balance }}</h3>
+        <table class="container">
+          <thead>
+            <tr>
+              <th>Адрес</th>
+              <th>Баланс (BNB)</th>
+              <th>Цепь</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{{ currAddrMini }}</td>
+              <td>{{ balance }}</td>
+              <td>{{ chainId }}</td>
+            </tr>
+          </tbody>
+        </table>
 
-        <!-- <input type="text" placeholder="from" v-model="transaction.from" /> -->
-        <input type="text" placeholder="to" v-model="transaction.to" />
-        <!-- <input type="text" placeholder="val" v-model="transaction.val" /> -->
-        <br />
-        <button @click="sendTransaction">send transatcion</button>
-        <br />
+        <button v-if="!transactionHash" class="button-1" id="sendButton" @click="sendTransaction">отправить 0.05 BNB Саньку</button>
+
+        <h4 v-if="transactionHash" style="color:#fb667a">Транзакция прошла</h4>
+        <h5 v-if="transactionHash" style="color:#fb667a">{{ transactionHash }}</h5>
+
       </div>
 
       <loading
@@ -28,13 +40,7 @@
         color="#EC760E"
         background-color="#3E3E3E"
       />
-      <button @click="isLoading = true">modal demo</button>
-
-      <button @click="connectWallet">connect wallet via modal</button>
-      <button @click="logChainId">log chainId</button>
-      <button @click="logAccounts">accs</button>
-      <br />
-      <button @click="switchChain">switchChain</button>
+      <button v-if="!currAddr" class="button-1" @click="connectWallet">Авторизация</button>
     </div>
   </div>
 </template>
@@ -75,18 +81,15 @@ export default {
       currAddrMini: null,
       chainId: null,
       balance: null,
-      transaction: {
-        from: "",
-        to: "",
-        val: ""
-      },
+      //после перевода хэш
+      transactionHash: null,
       // модальное окно
       isLoading: false,
       fullPage: true,
       // вступительное сообщение
       introMess: "",
       // иконка
-      BNBlogo: require('@/assets/binance-coin-bnb.png')
+      BNBlogo: require("@/assets/binance-coin-bnb.png")
     };
   },
   methods: {
@@ -100,7 +103,10 @@ export default {
 
       await this.switchChain();
       this.currAddr = await service.getAccounts(web3);
-      this.currAddrMini = this.currAddr.slice(0,4) + '...' + this.currAddr.slice(this.currAddr.length - 5, this.currAddr.length) 
+      this.currAddrMini =
+        this.currAddr.slice(0, 4) +
+        "..." +
+        this.currAddr.slice(this.currAddr.length - 5, this.currAddr.length);
       this.chainId = await service.getChainId(web3);
       this.balance = await service.getBalance(web3, this.currAddr);
 
@@ -122,15 +128,10 @@ export default {
       await provider.disconnect();
     },
     sendTransaction: async function() {
-      await web3.eth
-        .sendTransaction({
-          from: this.transaction.from,
-          to: this.transaction.to, //trust test eth
-          value: web3.utils.toWei(this.transaction.val, "ether")
-        })
-        .then(hash => {
-          console.log(hash);
-        });
+      this.isLoading = true;
+      var transactionHashResponse = await service.sendTransaction(web3, this.currAddr);
+      this.transactionHash = transactionHashResponse.transactionHash;
+      this.isLoading = false;
     },
     switchChain: async function() {
       try {
@@ -181,5 +182,91 @@ body {
 h3 {
   color: honeydew;
 }
-</style>
+.button-1 {
+  background-color: #ea4c89;
+  border-radius: 8px;
+  border-style: none;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-block;
+  font-family: "Haas Grot Text R Web", "Helvetica Neue", Helvetica, Arial,
+    sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  height: 40px;
+  line-height: 20px;
+  list-style: none;
+  margin: 0;
+  outline: none;
+  padding: 10px 16px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  transition: color 100ms;
+  vertical-align: baseline;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
 
+.button-1:hover,
+.button-1:focus {
+  background-color: #f082ac;
+}
+
+.container th h1 {
+  font-weight: bold;
+  font-size: 1em;
+  text-align: left;
+  color: #185875;
+}
+
+.container td {
+  font-weight: normal;
+  font-size: 1em;
+  -webkit-box-shadow: 0 2px 2px -2px #0e1119;
+  -moz-box-shadow: 0 2px 2px -2px #0e1119;
+  box-shadow: 0 2px 2px -2px #0e1119;
+}
+
+.container {
+  text-align: left;
+  overflow: hidden;
+  width: 40%;
+  margin: 0 auto;
+  display: table;
+}
+
+.container td,
+.container th {
+  padding-bottom: 2%;
+  padding-top: 2%;
+  padding-left: 2%;
+  color: #185875;
+}
+
+/* Background-color of the odd rows */
+.container tr:nth-child(odd) {
+  background-color: #323c50;
+}
+
+/* Background-color of the even rows */
+.container tr:nth-child(even) {
+  background-color: #2c3446;
+}
+
+.container th {
+  background-color: #1f2739;
+}
+
+.container td {
+  color: #fb667a;
+}
+
+
+#sendButton{
+  background-color: #fb667a;
+  margin-top: 10px;
+}
+</style>
